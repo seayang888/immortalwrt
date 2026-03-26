@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
-
 /dts-v1/;
 #include "mt7981b-xiaomi-mi-router-ax3000t.dtsi"
 
@@ -13,23 +12,62 @@
 	mediatek,bmt-max-ratio = <1>;
 	mediatek,bmt-max-reserved-blocks = <64>;
 	mediatek,bmt-mtd-overridden-oobsize = <64>;
+
+	// 分区表必须放在 &spi_nand 内部！这是你报错的根源！
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partition@0 {
+			label = "BL2";
+			reg = <0x000000 0x100000>;
+		};
+
+		partition@100000 {
+			label = "Nvram";
+			reg = <0x100000 0x040000>;
+		};
+
+		partition@140000 {
+			label = "Bdata";
+			reg = <0x140000 0x040000>;
+		};
+
+		partition@180000 {
+			label = "Factory";
+			reg = <0x180000 0x200000>;
+		};
+
+		partition@380000 {
+			label = "FIP";
+			reg = <0x380000 0x200000>;
+		};
+
+		partition@580000 {
+			label = "crash";
+			reg = <0x580000 0x040000>;
+		};
+
+		partition@5c0000 {
+			label = "crash_log";
+			reg = <0x5c0000 0x040000>;
+		};
+
+		partition@600000 {
+			label = "ubi";
+			reg = <0x600000 0x7000000>;
+		};
+
+		partition@7600000 {
+			label = "KF";
+			reg = <0x7600000 0x040000>;
+		};
+	};
 };
 
-&partitions {
-	// ubi_kernel is the ubi partition in stock.
-	partition@600000 {
-		label = "ubi_kernel";
-		reg = <0x600000 0x2200000>;
-	};
-
-	/* ubi is the result of squashing
-	 * consecutive stock partitions:
-	 * - ubi1
-	 * - overlay
-	 * - data
-	 */
-	partition@2800000 {
-		label = "ubi";
-		reg = <0x2800000 0x4e00000>;
+/ {
+	chosen {
+		bootargs = "console=ttyS0,115200n1 loglevel=8 earlycon=uart8250,mmio32,0x11002000";
 	};
 };
