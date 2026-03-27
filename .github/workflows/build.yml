@@ -19,7 +19,7 @@ jobs:
       - name: Add Feeds & OpenClash
         run: |
           # 1. 注入 OpenClash 官方源
-          echo "src-git openclash https://github.com" >> feeds.conf.default
+          echo "src-git openclash https://github.com/vernesong/OpenClash.git" >> feeds.conf.default
           
           # 2. 更新并安装 Feeds (增加容错)
           ./scripts/feeds update -a
