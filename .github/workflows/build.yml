@@ -1,7 +1,7 @@
 name: Build ImmortalWrt for AX3000T
 
 on:
-  workflow_dispatch: # 手动触发编译
+  workflow_dispatch:
 
 jobs:
   build:
@@ -10,42 +10,31 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Initialization environment
+      - name: Prepare Environment
         run: |
-          sudo rm -rf /etc/apt/sources.list.d/* /usr/share/dotnet /usr/local/lib/android /opt/ghc
           sudo -E apt-get -qq update
-          # 安装编译 OpenWrt 必须的全部依赖
           sudo -E apt-get -qq install build-essential clang flex bison g++ gawk gcc-multilib g++-multilib gettext git libncurses-dev libssl-dev python3-distutils rsync unzip zlib1g-dev file wget -y
-          sudo -E apt-get -qq autoremove --purge
-          sudo -E apt-get -qq clean
 
       - name: Update & Install Feeds
         run: |
-          # 关键点：直接在当前 Checkout 的源码目录下执行
           ./scripts/feeds update -a
           ./scripts/feeds install -a
 
-      - name: Load Custom Config
+      - name: Load Config & Defconfig
         run: |
-          # 将你仓库里的 .config 应用到编译环境
-          # 如果你没在根目录放 .config，这一步会报错提醒你
-          [ -e .config ] && echo "Config file found." || echo "Config file NOT found!"
+          # 关键：把仓库里的 .config 复制到编译目录
+          [ -e .config ] && cp .config .config.orig || touch .config
+          # 执行完这步，系统会自动根据你的 .config 补全 uhttpd 等所有缺失的包
           make defconfig
 
-      - name: Download package
+      - name: Download & Compile
         run: |
           make download -j$(nproc)
-          find dl -size -1024c -exec ls -l {} \;
-          find dl -size -1024c -exec rm -f {} \;
-
-      - name: Compile the firmware
-        run: |
-          echo -e "$(nproc) thread compile"
-          # 第一次编译建议用 -j1 或者限制线程防止 OOM 报错，这里默认用全线程
+          # 首次编译建议 j1 比较稳，或者 j$(nproc) 冲一下
           make -j$(nproc) || make -j1 V=s
 
-      - name: Upload firmware
+      - name: Upload Firmware
         uses: actions/upload-artifact@v4
         with:
-          name: ImmortalWrt_AX3000T_Stock
-          path: bin/targets/mediatek/filogic/*stock-layout*
+          name: ImmortalWrt_AX3000T_Final
+          path: bin/targets/mediatek/filogic/*stock-layout*sysupgrade.bin
