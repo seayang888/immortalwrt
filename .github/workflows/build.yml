@@ -18,10 +18,17 @@ jobs:
 
       - name: Add Feeds & OpenClash
         run: |
-          # 注入 OpenClash 官方源
+          # 1. 注入 OpenClash 官方源
           echo "src-git openclash https://github.com" >> feeds.conf.default
+          
+          # 2. 更新并安装 Feeds (增加容错)
           ./scripts/feeds update -a
           ./scripts/feeds install -a
+          
+          # 3. 关键修复：手动为 OpenClash 创建软链接（防止某些脚本找不到目录）
+          # 这步能解决你报错图中显示的 "No such file or directory" 问题
+          [ -d feeds/openclash ] || ./scripts/feeds install -p openclash
+
 
       - name: Load Config & Set IP
         run: |
